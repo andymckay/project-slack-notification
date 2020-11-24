@@ -65,8 +65,8 @@ def resolve_url(github, url):
     project_org = split[-3]
     org = github.get_organization(project_org)
     for project in org.get_projects(state="open"):
-        if project.number == project_number:
-            return project
+        if project.number == int(project_number):
+            return org, project
     raise ValueError("Couldn't resolve project with URL %s" % (url))
 
 
@@ -243,7 +243,7 @@ channel = get_env_var("CHANNEL")
 github = Github(get_env_var("PAT") or os.getenv("GITHUB_SCRIPT_TOKEN"))
 repo = github.get_repo(get_env_var("REPO_FOR_DATA"))
 
-org, project = resolve_url(get_env_var("PROJECT_URL"))
+org, project = resolve_url(github, get_env_var("PROJECT_URL"))
 
 if get_env_var_name("LABELS") in os.environ:
     if get_env_var("LABELS") == "":
