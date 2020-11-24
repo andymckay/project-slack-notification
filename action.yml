@@ -1,0 +1,28 @@
+name: "Project State Action"
+description: "Listens to projects and sends stuff to Slack."
+inputs:
+  PAT:
+    description: "A personal access token for GitHub"
+    required: true
+  SLACK_TOKEN:
+    description: "A token for Slack"
+    required: true
+  PROJECT_URL:
+    description: "The URL for the project"
+    required: true
+  CHANNEL:
+    description: "The Slack channel to post to"
+    required: true
+  REPO_FOR_DATA:
+    description: "The repo for data in org/repo format."
+    required: true
+  TRACK_ISSUES:
+    description: "Opt-in issue tracking"
+    required: false
+  LABELS:
+    description: "Comma-separated string of labels to track"
+    required: false
+    default: ""
+runs:
+  using: "docker"
+  image: "Dockerfile"
