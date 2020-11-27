@@ -1,5 +1,8 @@
 name: "Project State Action"
 description: "Listens to projects and sends stuff to Slack."
+branding:
+  icon: "arrow-down-circle"
+  color: "orange"
 inputs:
   PAT:
     description: "A personal access token for GitHub"
