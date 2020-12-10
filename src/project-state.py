@@ -8,6 +8,7 @@ import json
 import markdown
 import os
 import re
+import requests
 import sys
 import urllib
 
@@ -236,10 +237,23 @@ def get_env_var_name(name):
 def get_env_var(name):
     return os.getenv(get_env_var_name(name))
 
+def is_env_var_present(name):
+    return get_env_var_name(name) in os.environ and get_env_var(name) != ""
 
 # Get bits
+use_slack_api = is_env_var_present("SLACK_TOKEN") and is_env_var_present("CHANNEL")
+use_slack_webhook = is_env_var_present("SLACK_WEBHOOK")
+
+if use_slack_api == use_slack_webhook:
+    if use_slack_api is True:
+        print("Both Slack API (SLACK_TOKEN & CHANNEL) and Slack Incoming Webhook (SLACK_WEBHOOK) are configured. Update configuration to use only one.")
+    else:
+        print("Missing Slack configuration. Please provide SLACK_TOKEN & CHANNEL if you wish to use Slack API, or SLACK_WEBHOOK if you wish to use Slack Incoming Webhook instead.")
+    sys.exit(1)
+
 slack = WebClient(token=get_env_var("SLACK_TOKEN"))
 channel = get_env_var("CHANNEL")
+slack_webhook = get_env_var("SLACK_WEBHOOK")
 github = Github(get_env_var("PAT") or os.getenv("GITHUB_SCRIPT_TOKEN"))
 repo = github.get_repo(get_env_var("REPO_FOR_DATA"))
 
@@ -266,11 +280,20 @@ def send_slack(project, text, attachment=None, color="#D3D3D3"):  # grey-ish
             "text": text,
             "footer": footer,
         }
-    response = slack.chat_postMessage(
-        channel=channel, attachments=[attachment]
-    )
-    print("...sent to channel %s" % channel)
-    return response
+
+    if use_slack_api:
+        response = slack.chat_postMessage(
+            channel=channel, attachments=[attachment]
+        )
+        print("...sent to channel %s" % channel)
+        return response
+    else:
+        body = {
+            "attachments": [attachment],
+        }
+        response = requests.post(slack_webhook, json=body)
+        print("...sent to webhook")
+        return None
 
 
 def convert_to_slack_markdown(gh_text):
@@ -305,6 +328,10 @@ def publish_comment(text, context):
 
 
 def update_comment(ts, text, context):
+    if not use_slack_api:
+        print >> sys.stderr, "Slack Incoming Webhooks don't allow updating messages, only posting new messages is possible. Configure Slack API (SLACK_TOKEN & CHANNEL) for messages updates."
+        sys.exit(1)
+
     print(text)
     print(context)
     print("---------GH_to_Slack--------")
@@ -348,10 +375,11 @@ if get_env_var("TRACK_ISSUES").lower() == 'true':
                 comments[issue]["title"],
             )
             response = publish_comment(comment.body, context)
-            for column in current_state.values():
-                for k in column["issues"].values():
-                    if k["id"] == issue:
-                        k["comments"][comment.id] = response["ts"]
+            if response is not None:
+                for column in current_state.values():
+                    for k in column["issues"].values():
+                        if k["id"] == issue:
+                            k["comments"][comment.id] = response["ts"]
         for update in comments[issue]["comments_update"]:
             for column in current_state.values():
                 for k in column["issues"].values():
