@@ -26,7 +26,7 @@ This Action is perfect for running on demand via `workflow_dispatch` or regularl
     * Slack App with Incoming Webhooks enabled.
     * The Webhook for the channel.
 
-**Note: **
+**Note:**
 
 *Incoming Webhooks make it easier to integrate Slack App into the Workspace but comes with limitation. Webhooks allow posting messages but does not allow updating existing messages. Feature used when `TRACK_ISSUES` is enabled and a GitHub issue comment was updated after related Slack message was posted.*
 
@@ -80,3 +80,4 @@ jobs:
 **Contributors:**
 * @ritchxu
 * @kevin-david
+* @lukewar
