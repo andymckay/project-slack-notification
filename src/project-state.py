@@ -10,6 +10,7 @@ import os
 import re
 import requests
 import sys
+import time
 import urllib
 
 datetime_format = "%Y-%m-%dT%H:%M:%SZ"
@@ -135,10 +136,23 @@ def save_data(repo, project, state):
             state[column]["issues"][issue]["last_read"] = get_now()
 
     filename = ".data/%s.json" % project.id
-    content = repo.get_contents(filename)
-    # TODO this will probably fail on unicode.
-    return repo.update_file(content.path, "Update", json.dumps(state), content.sha)
-
+    i = 1
+    while True:
+        try:
+            content = repo.get_contents(filename)
+            # TODO this will probably fail on unicode.
+            return repo.update_file(content.path, "Update", json.dumps(state), content.sha)
+        except GithubException as e:
+            if e.status == 409: # 409 (Conflict) when other runs update at the same time
+                if (i <= 3):
+                    print("Received 409 when pushing updates. Sleeping for %s seconds before retry %s" % (i * 5, i))
+                    time.sleep(i * 5)
+                    i += 1
+                    continue
+                else:
+                    raise "Failed to update data content"
+            else:
+                raise
 
 def init_data(repo, project):
     filename = ".data/%s.json" % project.id
