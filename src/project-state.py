@@ -16,6 +16,11 @@ import urllib
 datetime_format = "%Y-%m-%dT%H:%M:%SZ"
 
 
+def escape_slack_link(original):
+    # https://api.slack.com/reference/surfaces/formatting#escaping
+    return original.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def get_now():
     now = datetime.utcnow()
     current_time = now.strftime(datetime_format)
@@ -287,7 +292,7 @@ else:
 def send_slack(project, text, attachment=None, color="#D3D3D3"):  # grey-ish
     if attachment is None:
         print(text)
-        footer = "Updated in project <%s|%s>" % (project.html_url, project.name)
+        footer = "Updated in project <%s|%s>" % (project.html_url, escape_slack_link(project.name))
         attachment = {
             "mrkdwn_in": ["text"],
             "color": color,
@@ -386,7 +391,7 @@ if get_env_var("TRACK_ISSUES").lower() == 'true':
             context = "*%s* commented on <%s|%s>" % (
                 comment.user.login,
                 comment.html_url,
-                comments[issue]["title"],
+                escape_slack_link(comments[issue]["title"]),
             )
             response = publish_comment(comment.body, context)
             if response is not None:
@@ -402,7 +407,7 @@ if get_env_var("TRACK_ISSUES").lower() == 'true':
                             context = "*%s* updated comment on <%s|%s>" % (
                                 update.user.login,
                                 update.html_url,
-                                comments[issue]["title"],
+                                escape_slack_link(comments[issue]["title"]),
                             )
                             update_comment(k["comments"][id], update.body, context)
 
@@ -430,7 +435,7 @@ for diff in diffs:
         % (
             issue_emoji,
             diff["issue"]["html_url"],
-            diff["issue"]["title"],
+            escape_slack_link(diff["issue"]["title"]),
             diff["comment"],
         )
     )
