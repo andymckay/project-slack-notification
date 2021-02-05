@@ -199,7 +199,7 @@ def diff_states(current_state, last_state):
             diffs.append(
                 {
                     "issue": current_issues[issue]["issue"],
-                    "comment": "added to the board :point_right: `%s`" % (current_column),
+                    "comment": "added to the board into `%s`" % (current_column),
                 }
             )
 
