@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from github import Github, GithubException, Issue, Organization
+from github import Github, GithubException, RateLimitExceededException, Issue, Organization
 from htmlslacker import HTMLSlacker
 from slack import WebClient
 from slack.errors import SlackApiError
@@ -376,68 +376,73 @@ def update_comment(ts, text, context):
         else:
             raise e
 
+def main(repo, project):
+    init_data(repo, project)
 
-init_data(repo, project)
+    # Now do stuff.
+    last_state = get_data(repo, project)
+    current_state = get_state(project)
+    current_state = inherit_states(current_state, last_state)
 
-# Now do stuff.
-last_state = get_data(repo, project)
-current_state = get_state(project)
-current_state = inherit_states(current_state, last_state)
-
-if get_env_var("TRACK_ISSUES").lower() == 'true':
-    comments = get_comments(project, last_state)
-    for issue in comments.keys():
-        for comment in comments[issue]["comments"]:
-            context = "*%s* commented on <%s|%s>" % (
-                comment.user.login,
-                comment.html_url,
-                escape_slack_link(comments[issue]["title"]),
-            )
-            response = publish_comment(comment.body, context)
-            if response is not None:
+    if get_env_var("TRACK_ISSUES").lower() == 'true':
+        comments = get_comments(project, last_state)
+        for issue in comments.keys():
+            for comment in comments[issue]["comments"]:
+                context = "*%s* commented on <%s|%s>" % (
+                    comment.user.login,
+                    comment.html_url,
+                    escape_slack_link(comments[issue]["title"]),
+                )
+                response = publish_comment(comment.body, context)
+                if response is not None:
+                    for column in current_state.values():
+                        for k in column["issues"].values():
+                            if k["id"] == issue:
+                                k["comments"][comment.id] = response["ts"]
+            for update in comments[issue]["comments_update"]:
                 for column in current_state.values():
                     for k in column["issues"].values():
-                        if k["id"] == issue:
-                            k["comments"][comment.id] = response["ts"]
-        for update in comments[issue]["comments_update"]:
-            for column in current_state.values():
-                for k in column["issues"].values():
-                    for id in k["comments"].keys():
-                        if id == str(update.id):
-                            context = "*%s* updated comment on <%s|%s>" % (
-                                update.user.login,
-                                update.html_url,
-                                escape_slack_link(comments[issue]["title"]),
-                            )
-                            update_comment(k["comments"][id], update.body, context)
+                        for id in k["comments"].keys():
+                            if id == str(update.id):
+                                context = "*%s* updated comment on <%s|%s>" % (
+                                    update.user.login,
+                                    update.html_url,
+                                    escape_slack_link(comments[issue]["title"]),
+                                )
+                                update_comment(k["comments"][id], update.body, context)
 
-save_data(repo, project, current_state)
+    save_data(repo, project, current_state)
 
-if not last_state:
-    print("No last state found, exiting.")
-    sys.exit()
+    if not last_state:
+        print("No last state found, exiting.")
+        sys.exit()
 
-diffs = diff_states(current_state, last_state)
-if not diffs:
-    print("No difference found, exiting.")
-    sys.exit()
+    diffs = diff_states(current_state, last_state)
+    if not diffs:
+        print("No difference found, exiting.")
+        sys.exit()
 
 
-msgs = []
-diffs = sorted(diffs, key=lambda k: k["comment"])
-for diff in diffs:
-    issue_emoji = ":issue-closed:" if diff["issue"]["state"] == "closed" else ":issue:"
-    color = (
-        "#36a64f" if diff["issue"]["state"] == "closed" else "#439FE0"
-    )  # green if closed, blue otherwise
-    msgs.append(
-        "%s <%s|%s> %s"
-        % (
-            issue_emoji,
-            diff["issue"]["html_url"],
-            escape_slack_link(diff["issue"]["title"]),
-            diff["comment"],
+    msgs = []
+    diffs = sorted(diffs, key=lambda k: k["comment"])
+    for diff in diffs:
+        issue_emoji = ":issue-closed:" if diff["issue"]["state"] == "closed" else ":issue:"
+        color = (
+            "#36a64f" if diff["issue"]["state"] == "closed" else "#439FE0"
+        )  # green if closed, blue otherwise
+        msgs.append(
+            "%s <%s|%s> %s"
+            % (
+                issue_emoji,
+                diff["issue"]["html_url"],
+                escape_slack_link(diff["issue"]["title"]),
+                diff["comment"],
+            )
         )
-    )
 
-send_slack(project, "\n".join(msgs), color=color)
+    send_slack(project, "\n".join(msgs), color=color)
+
+try:
+    main(repo, project)
+except RateLimitExceededException:
+    print("Hit GitHub RateLimitExceededException. Skipping this run.")
