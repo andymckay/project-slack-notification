@@ -259,35 +259,6 @@ def get_env_var(name):
 def is_env_var_present(name):
     return get_env_var_name(name) in os.environ and get_env_var(name) != ""
 
-# Get bits
-use_slack_api = is_env_var_present("SLACK_TOKEN") and is_env_var_present("CHANNEL")
-use_slack_webhook = is_env_var_present("SLACK_WEBHOOK")
-
-if use_slack_api == use_slack_webhook:
-    if use_slack_api is True:
-        print("Both Slack API (SLACK_TOKEN & CHANNEL) and Slack Incoming Webhook (SLACK_WEBHOOK) are configured. Update configuration to use only one.")
-    else:
-        print("Missing Slack configuration. Please provide SLACK_TOKEN & CHANNEL if you wish to use Slack API, or SLACK_WEBHOOK if you wish to use Slack Incoming Webhook instead.")
-    sys.exit(1)
-
-slack = WebClient(token=get_env_var("SLACK_TOKEN"))
-channel = get_env_var("CHANNEL")
-slack_webhook = get_env_var("SLACK_WEBHOOK")
-github = Github(get_env_var("PAT") or os.getenv("GITHUB_SCRIPT_TOKEN"))
-repo = github.get_repo(get_env_var("REPO_FOR_DATA"))
-
-org, project = resolve_url(github, get_env_var("PROJECT_URL"))
-
-if get_env_var_name("LABELS") in os.environ:
-    if get_env_var("LABELS") == "":
-        print("LABELS is empty string, won't filter")
-        labels = []
-    else:
-        labels = get_env_var("LABELS").split(",")
-else:
-    print("LABELS not specified, won't filter")
-    labels = []
-
 
 def send_slack(project, text, attachment=None, color="#D3D3D3"):  # grey-ish
     if attachment is None:
@@ -442,7 +413,37 @@ def main(repo, project):
 
     send_slack(project, "\n".join(msgs), color=color)
 
+# Get bits
+use_slack_api = is_env_var_present("SLACK_TOKEN") and is_env_var_present("CHANNEL")
+use_slack_webhook = is_env_var_present("SLACK_WEBHOOK")
+
+if use_slack_api == use_slack_webhook:
+    if use_slack_api is True:
+        print("Both Slack API (SLACK_TOKEN & CHANNEL) and Slack Incoming Webhook (SLACK_WEBHOOK) are configured. Update configuration to use only one.")
+    else:
+        print("Missing Slack configuration. Please provide SLACK_TOKEN & CHANNEL if you wish to use Slack API, or SLACK_WEBHOOK if you wish to use Slack Incoming Webhook instead.")
+    sys.exit(1)
+
+if get_env_var_name("LABELS") in os.environ:
+    if get_env_var("LABELS") == "":
+        print("LABELS is empty string, won't filter")
+        labels = []
+    else:
+        labels = get_env_var("LABELS").split(",")
+else:
+    print("LABELS not specified, won't filter")
+    labels = []
+
+slack = WebClient(token=get_env_var("SLACK_TOKEN"))
+channel = get_env_var("CHANNEL")
+slack_webhook = get_env_var("SLACK_WEBHOOK")
+
 try:
+    # Subject to GitHub RateLimitExceededException
+    github = Github(get_env_var("PAT") or os.getenv("GITHUB_SCRIPT_TOKEN"))
+    repo = github.get_repo(get_env_var("REPO_FOR_DATA"))
+    org, project = resolve_url(github, get_env_var("PROJECT_URL"))
+
     main(repo, project)
 except RateLimitExceededException:
     print("Hit GitHub RateLimitExceededException. Skipping this run.")
