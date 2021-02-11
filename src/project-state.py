@@ -214,17 +214,17 @@ def diff_states(current_state, last_state):
 
     for diff in current_list.difference(last_list):
         issue, column = diff
+        current_column = current_state[current_issues[issue]["column"]]["name"]
         if issue not in last_issues:
             diffs.append(
                 {
                     "issue": current_issues[issue]["issue"],
-                    "comment": "added to the board",
+                    "comment": "added to the board into `%s`" % (current_column),
                 }
             )
 
         else:
             last_column = last_state[last_issues[issue]["column"]]["name"]
-            current_column = current_state[current_issues[issue]["column"]]["name"]
             diffs.append(
                 {
                     "issue": current_issues[issue]["issue"],
