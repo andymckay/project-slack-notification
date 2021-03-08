@@ -219,7 +219,7 @@ def diff_states(current_state, last_state):
             diffs.append(
                 {
                     "issue": current_issues[issue]["issue"],
-                    "comment": "added to the board into `%s`" % (current_column),
+                    "comment": "added to the board into `%s` :wave:" % (current_column),
                 }
             )
 
@@ -239,7 +239,7 @@ def diff_states(current_state, last_state):
             diffs.append(
                 {
                     "issue": last_issues[issue]["issue"],
-                    "comment": "removed from the board",
+                    "comment": "removed from the board :broken_heart:",
                 }
             )
 
