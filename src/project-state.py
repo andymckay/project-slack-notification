@@ -411,7 +411,14 @@ def main(repo, project):
             )
         )
 
-    send_slack(project, "\n".join(msgs), color=color)
+    msgs = "\n".join(msgs)
+
+    if description:
+        text = description + "\n" + msgs 
+    else:
+        text = msgs
+
+    send_slack(project, text, color=color)
 
 # Get bits
 use_slack_api = is_env_var_present("SLACK_TOKEN") and is_env_var_present("CHANNEL")
@@ -433,6 +440,16 @@ if get_env_var_name("LABELS") in os.environ:
 else:
     print("LABELS not specified, won't filter")
     labels = []
+
+if get_env_var_name("DESCRIPTION") in os.environ:
+    if get_env_var("DESCRIPTION") == "":
+        print("DESCRIPTION is empty string, won't display")
+        description = ""
+    else:
+        description = convert_to_slack_markdown(get_env_var("DESCRIPTION"))
+else:
+    print("DESCRIPTION not specified, won't display")
+    description = ""
 
 slack = WebClient(token=get_env_var("SLACK_TOKEN"))
 channel = get_env_var("CHANNEL")

@@ -29,6 +29,9 @@ inputs:
     description: "Comma-separated string of labels to track"
     required: false
     default: ""
+  DESCRIPTION:
+    description: "A markdown formatted description of the board, if needed."
+    required: false
 runs:
   using: "docker"
   image: "Dockerfile"
