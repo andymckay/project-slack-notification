@@ -39,7 +39,7 @@ This Action is perfect for running on demand via `workflow_dispatch` or regularl
 * `REPO_FOR_DATA`: A repository to store data to. It will be stored in a `.data` directory.
 * `TRACK_ISSUES` (optional): `true` if you'd like to be notified about comments on issues
 * `LABELS` (optional): a list of labels that you'd like to track.
-* `DESCRIPTION` (optional): a markdown formatted description of the board being tracked.
+* `SHOW_PROJECT_BODY` (optional): shows the projects description.
 
 **Examples YML:**
 

@@ -441,15 +441,6 @@ else:
     print("LABELS not specified, won't filter")
     labels = []
 
-if get_env_var_name("DESCRIPTION") in os.environ:
-    if get_env_var("DESCRIPTION") == "":
-        print("DESCRIPTION is empty string, won't display")
-        description = ""
-    else:
-        description = convert_to_slack_markdown(get_env_var("DESCRIPTION"))
-else:
-    print("DESCRIPTION not specified, won't display")
-    description = ""
 
 slack = WebClient(token=get_env_var("SLACK_TOKEN"))
 channel = get_env_var("CHANNEL")
@@ -460,6 +451,11 @@ try:
     github = Github(get_env_var("PAT") or os.getenv("GITHUB_SCRIPT_TOKEN"))
     repo = github.get_repo(get_env_var("REPO_FOR_DATA"))
     org, project = resolve_url(github, get_env_var("PROJECT_URL"))
+
+    if get_env_var("SHOW_PROJECT_BODY").lower() == "true":
+        description = convert_to_slack_markdown(project.body)
+    else:
+        description = ""
 
     main(repo, project)
 except RateLimitExceededException:

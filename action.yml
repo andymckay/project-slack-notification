@@ -29,9 +29,10 @@ inputs:
     description: "Comma-separated string of labels to track"
     required: false
     default: ""
-  DESCRIPTION:
-    description: "A markdown formatted description of the board, if needed."
+  SHOW_PROJECT_BODY:
+    description: "Whether or not to display the projects description"
     required: false
+    default: "true"
 runs:
   using: "docker"
   image: "Dockerfile"
