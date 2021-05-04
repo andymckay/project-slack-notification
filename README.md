@@ -39,6 +39,7 @@ This Action is perfect for running on demand via `workflow_dispatch` or regularl
 * `REPO_FOR_DATA`: A repository to store data to. It will be stored in a `.data` directory.
 * `TRACK_ISSUES` (optional): `true` if you'd like to be notified about comments on issues
 * `LABELS` (optional): a list of labels that you'd like to track.
+* `SHOW_PROJECT_BODY` (optional): shows the projects description.
 
 **Examples YML:**
 
@@ -58,6 +59,11 @@ jobs:
           PROJECT_URL: "https://github.com/orgs/your-cool-org/projects/1"
           CHANNEL: "#your-cool-project-channel"
           REPO_FOR_DATA: "andymckay/data"
+          DESCRIPTION: |
+            # Cool Project Update
+
+            Here's a cat gif
+            ![](https://media.giphy.com/media/BzyTuYCmvSORqs1ABM/giphy.gif)
 ```
 
 ```yaml
@@ -81,3 +87,4 @@ jobs:
 * @ritchxu
 * @kevin-david
 * @lukewar
+* @nodeselector

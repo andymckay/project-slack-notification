@@ -411,7 +411,14 @@ def main(repo, project):
             )
         )
 
-    send_slack(project, "\n".join(msgs), color=color)
+    msgs = "\n".join(msgs)
+
+    if description:
+        text = description + "\n" + msgs 
+    else:
+        text = msgs
+
+    send_slack(project, text, color=color)
 
 # Get bits
 use_slack_api = is_env_var_present("SLACK_TOKEN") and is_env_var_present("CHANNEL")
@@ -434,6 +441,7 @@ else:
     print("LABELS not specified, won't filter")
     labels = []
 
+
 slack = WebClient(token=get_env_var("SLACK_TOKEN"))
 channel = get_env_var("CHANNEL")
 slack_webhook = get_env_var("SLACK_WEBHOOK")
@@ -443,6 +451,11 @@ try:
     github = Github(get_env_var("PAT") or os.getenv("GITHUB_SCRIPT_TOKEN"))
     repo = github.get_repo(get_env_var("REPO_FOR_DATA"))
     org, project = resolve_url(github, get_env_var("PROJECT_URL"))
+
+    if get_env_var("SHOW_PROJECT_BODY").lower() == "true":
+        description = convert_to_slack_markdown(project.body)
+    else:
+        description = ""
 
     main(repo, project)
 except RateLimitExceededException:
